@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Custom Scrollbar for the main content area */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; } /* Matches bg-gray-900 */
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; } /* Matches border-gray-700 */
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        
+        .sidebar-transition { transition: all 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white h-screen overflow-hidden flex">
+
+    <!-- ================= PAGE 1: LOGIN OVERLAY ================= -->
+    <section id="page1_login" class="absolute inset-0 z-50 flex items-center justify-center bg-gray-900 px-4 fade-in">
+        <div class="bg-gray-800 p-8 rounded-xl border border-gray-700 w-full max-w-md shadow-2xl">
+            <h1 class="text-3xl font-bold text-blue-400 text-center mb-2">Video Watch Analysis</h1>
+            <p class="text-center text-gray-400 text-sm mb-8">Secure Login Gateway</p>
+            
+            <!-- Login Form -->
+            <div id="loginFormContainer">
+                <form onsubmit="handleLogin(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm font-bold mb-2">Username</label>
+                        <input class="bg-gray-900 border border-gray-600 rounded w-full py-3 px-4 text-white focus:border-blue-500 focus:outline-none" id="username" type="text" placeholder="Enter username" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm font-bold mb-2">Password</label>
+                        <input class="bg-gray-900 border border-gray-600 rounded w-full py-3 px-4 text-white focus:border-blue-500 focus:outline-none" id="password" type="password" placeholder="Enter password" required>
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 w-full rounded transition transform active:scale-95" type="submit">Sign In</button>
+                    <p class="text-gray-400 text-sm mt-4 text-center">New user? <a href="#" onclick="toggleAuthMode()" class="text-blue-400 hover:text-blue-300">Create account</a></p>
+                    <p id="loginError" class="text-red-500 text-xs mt-4 text-center hidden">Invalid credentials. Try 'admin' / 'spark'</p>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerFormContainer" class="hidden">
+                <form onsubmit="handleRegister(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-400 text-sm font-bold mb-2">Choose Username</label>
+                        <input class="bg-gray-900 border border-gray-600 rounded w-full py-3 px-4 text-white focus:border-green-500 focus:outline-none" id="reg_username" type="text" required>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm font-bold mb-2">Choose Password</label>
+                        <input class="bg-gray-900 border border-gray-600 rounded w-full py-3 px-4 text-white focus:border-green-500 focus:outline-none" id="reg_password" type="password" required>
+                    </div>
+                    <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 w-full rounded transition transform active:scale-95" type="submit">Create Account</button>
+                    <p class="text-gray-400 text-sm mt-4 text-center">Already have an account? <a href="#" onclick="toggleAuthMode()" class="text-blue-400 hover:text-blue-300">Sign In</a></p>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= APP LAYOUT ================= -->
+    <div id="appLayout" class="flex w-full h-full hidden fade-in">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="mainSidebar" class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col shadow-xl z-20 sidebar-transition overflow-hidden relative">
+            <!-- App Title -->
+            <div class="p-6 border-b border-gray-700 whitespace-nowrap">
+                <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400">Video Watch Analysis</h1>
+                <p class="text-gray-500 text-xs mt-1">Powered by HAGA@2215</p>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-grow p-4 space-y-2">
+                <button onclick="showPage(2)" id="btnPage2" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition bg-blue-600 text-white shadow-md text-left whitespace-nowrap">
+                    <svg class="w-5 h-5 min-w-[1.25rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="showPage(3)" id="btnPage3" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition text-gray-300 hover:bg-gray-700 hover:text-white text-left whitespace-nowrap">
+                    <svg class="w-5 h-5 min-w-[1.25rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    <span>Deep Analytics</span>
+                </button>
+                
+                <!-- SPARK UI LINK -->
+                <a href="http://localhost:4040" target="_blank" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition text-orange-400 hover:bg-orange-900/30 hover:text-orange-300 text-left whitespace-nowrap border border-orange-500/30 mt-4">
+                    <svg class="w-5 h-5 min-w-[1.25rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span>Open Spark UI</span>
+                </a>
+            </nav>
+
+            <!-- User Profile / Logout -->
+            <div class="p-4 border-t border-gray-700 whitespace-nowrap">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 min-w-[2.5rem] rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+                        U
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white" id="userDisplay">User</p>
+                        <p class="text-xs text-gray-400">Admin Access</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full flex items-center justify-center gap-2 bg-red-900/30 text-red-400 border border-red-500/30 py-2 rounded hover:bg-red-600 hover:text-white transition text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto bg-gray-900 p-8 relative transition-all duration-300">
+            
+            <!-- TOGGLE SIDEBAR BUTTON -->
+            <button onclick="toggleSidebar()" class="absolute top-4 left-4 text-gray-500 hover:text-white focus:outline-none p-2 rounded bg-gray-800 border border-gray-700 shadow-sm z-30" title="Toggle Sidebar">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+
+            <!-- ================= PAGE 2: DASHBOARD CONTENT ================= -->
+            <div id="page2_content" class="space-y-8 hidden pt-8">
+                <!-- Header -->
+                <div class="flex justify-between items-end border-b border-gray-800 pb-4 pl-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Dashboard Overview</h2>
+                        <p class="text-gray-400 text-sm mt-1">Key metrics, segmentation, and AI recommendations.</p>
+                    </div>
+                </div>
+
+                <!-- Module: Upload Data -->
+                <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg">
+                    <h2 class="text-lg font-semibold mb-4 text-yellow-400 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Upload Data
+                    </h2>
+                    <div class="w-full">
+                        <label class="block text-sm text-gray-500 mb-2">Upload <code class="bg-gray-900 px-1 rounded">your data</code></label>
+                        <input type="file" id="rawInput" accept=".csv" class="file-input w-full text-sm bg-gray-700 rounded border border-gray-600 p-3 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
+                        <p class="text-xs text-gray-500 mt-2">results are generated below</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Module: User Segmentation -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg col-span-1">
+                        <h3 class="text-lg font-bold text-purple-400 mb-2">User Segmentation</h3>
+                        <p class="text-xs text-gray-500 mb-4">Calculated from Duration & Seek Events</p>
+                        <div class="h-64 relative"><canvas id="clusterChart"></canvas></div>
+                        <div class="mt-4 text-xs text-gray-400 text-center italic">"Binge Watchers" are your most valuable users.</div>
+                    </div>
+
+                    <!-- Module: Smart Ad Insertion -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg col-span-2">
+                        <h3 class="text-lg font-bold text-green-400 mb-2">Smart Ad-Insertion (Top 100)</h3>
+                        <p class="text-xs text-gray-500 mb-4">Calculated "Best Time" & "Full Completions"</p>
+                        <div class="overflow-y-auto max-h-64">
+                            <table class="w-full text-left text-sm text-gray-400">
+                                <thead class="bg-gray-700 text-gray-200 uppercase text-xs sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-2 rounded-tl-lg">Video ID</th>
+                                        <th class="px-4 py-2">Best Time (Peak Viewers)</th>
+                                        <th class="px-4 py-2 rounded-tr-lg">Users Watched Fully</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adTableBody" class="divide-y divide-gray-700">
+                                    <tr><td colspan="3" class="px-4 py-4 text-center italic">Waiting for dataset...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module: Recommendations -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-lg font-bold text-blue-400 mb-2">AI Recommendation Engine (Top 100)</h3>
+                    <p class="text-xs text-gray-500 mb-4">Suggested videos based on viewing patterns</p>
+                    <div class="overflow-y-auto max-h-64">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3">User ID</th>
+                                    <th class="px-4 py-3">Recommended Video</th>
+                                    <th class="px-4 py-3 text-right">Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recTableBody" class="divide-y divide-gray-700">
+                                <tr><td colspan="3" class="px-4 py-4 text-center italic">Waiting for dataset...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= PAGE 3: DEEP ANALYTICS CONTENT ================= -->
+            <div id="page3_content" class="space-y-8 hidden pt-8">
+                
+                <!-- Header -->
+                <div class="flex justify-between items-end border-b border-gray-800 pb-4 pl-8">
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">Deep Analytics</h2>
+                        <p class="text-gray-400 text-sm mt-1">Advanced metrics, churn prediction, and individual user drill-downs.</p>
+                    </div>
+                </div>
+
+                <!-- NEW: CHURN RISK & VIDEO BATTLE -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Module: Churn Risk -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                        <h3 class="text-lg font-bold text-orange-500 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            Churn Risk Prediction
+                        </h3>
+                        <p class="text-xs text-gray-500 mb-4">Users with Low Satisfaction Score (High Skip / Low Completion)</p>
+                        <div class="overflow-y-auto max-h-60">
+                            <table class="w-full text-left text-sm text-gray-400">
+                                <thead class="bg-gray-700 text-gray-200 uppercase text-xs sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-2">User ID</th>
+                                        <th class="px-4 py-2">Risk Level</th>
+                                        <th class="px-4 py-2 text-right">Loyalty Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="churnTableBody" class="divide-y divide-gray-700">
+                                    <tr><td colspan="3" class="px-4 py-4 text-center italic">Analysis pending...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Module: Video Battle -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                        <h3 class="text-lg font-bold text-pink-500 mb-2">Comparative "Video Battle"</h3>
+                        <p class="text-xs text-gray-500 mb-4">Compare Skip Patterns of two videos</p>
+                        <div class="flex gap-2 mb-4">
+                            <select id="battleVid1" class="bg-gray-700 text-white text-xs border border-gray-600 rounded p-2 w-1/2"></select>
+                            <select id="battleVid2" class="bg-gray-700 text-white text-xs border border-gray-600 rounded p-2 w-1/2"></select>
+                        </div>
+                        <div class="h-48 w-full"><canvas id="battleChart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Module: Boredom Heatmap -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-red-400">Boredom Heatmap (Single View)</h3>
+                            <p class="text-xs text-gray-500">Deep dive into one video's retention</p>
+                        </div>
+                        <select id="heatmapVideoSelect" class="bg-gray-700 text-white text-xs border border-gray-600 rounded p-2 focus:outline-none focus:border-red-500 w-40">
+                            <option value="all">All Videos</option>
+                        </select>
+                    </div>
+                    <div class="h-64 w-full"><canvas id="heatmapChart"></canvas></div>
+                </div>
+
+                <!-- Module: User Inspector -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-indigo-400">User Inspector</h3>
+                            <p class="text-xs text-gray-500">Drill-down into individual activity</p>
+                        </div>
+                        <select id="userSelect" class="bg-gray-700 text-white text-sm border border-gray-600 rounded p-2 focus:outline-none focus:border-indigo-500">
+                            <option value="">Select User ID</option>
+                        </select>
+                    </div>
+
+                    <!-- User Summary & Chart -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div id="userSummary" class="hidden bg-gray-700/30 rounded-lg p-4 border border-gray-600 flex flex-col justify-center">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-gray-400">User Status</span>
+                                <span id="userBadge" class="text-sm font-bold px-2 py-1 rounded bg-gray-600 text-gray-300">Unknown</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-400">Total Interactions</span>
+                                <span id="userInteractions" class="text-xl font-bold text-white">0</span>
+                            </div>
+                        </div>
+                        <div class="h-32 relative">
+                            <canvas id="userPrefChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Activity Timeline -->
+                    <div class="overflow-y-auto max-h-64 border-t border-gray-700 pt-4">
+                        <table class="w-full text-left text-sm text-gray-400">
+                            <thead class="bg-gray-700 text-gray-200 uppercase text-xs sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2">Video ID</th>
+                                    <th class="px-4 py-2">Category</th>
+                                    <th class="px-4 py-2">Activity Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userActivityBody" class="divide-y divide-gray-700">
+                                <tr><td colspan="3" class="px-4 py-4 text-center italic">Select a user above to view details</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- GLOBAL DATA STORE ---
+        let globalData = [];
+        let globalUserStats = {};
+
+        // --- TOGGLE SIDEBAR ---
+        function toggleSidebar() {
+            const sb = document.getElementById('mainSidebar');
+            if(sb.classList.contains('w-64')) {
+                sb.classList.remove('w-64');
+                sb.classList.add('w-0');
+                sb.classList.add('p-0'); // Remove padding to fully hide content
+            } else {
+                sb.classList.add('w-64');
+                sb.classList.remove('w-0');
+                sb.classList.remove('p-0');
+            }
+            
+            // Trigger chart resize
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 305);
+        }
+
+        // --- NAVIGATION ---
+        function showPage(pageNumber) {
+            // Hide Login overlay
+            if(pageNumber !== 1) document.getElementById('page1_login').classList.add('hidden');
+            else document.getElementById('page1_login').classList.remove('hidden');
+
+            // Toggle App Layout visibility
+            if(pageNumber === 1) document.getElementById('appLayout').classList.add('hidden');
+            else document.getElementById('appLayout').classList.remove('hidden');
+
+            // Page 2 vs Page 3 visibility
+            if(pageNumber === 2) {
+                document.getElementById('page2_content').classList.remove('hidden');
+                document.getElementById('page3_content').classList.add('hidden');
+                
+                // Update Sidebar Styles
+                document.getElementById('btnPage2').classList.remove('text-gray-300', 'hover:bg-gray-700');
+                document.getElementById('btnPage2').classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                
+                document.getElementById('btnPage3').classList.add('text-gray-300', 'hover:bg-gray-700');
+                document.getElementById('btnPage3').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+            }
+            else if(pageNumber === 3) {
+                document.getElementById('page2_content').classList.add('hidden');
+                document.getElementById('page3_content').classList.remove('hidden');
+                
+                // Update Sidebar Styles
+                document.getElementById('btnPage2').classList.add('text-gray-300', 'hover:bg-gray-700');
+                document.getElementById('btnPage2').classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                
+                document.getElementById('btnPage3').classList.remove('text-gray-300', 'hover:bg-gray-700');
+                document.getElementById('btnPage3').classList.add('bg-blue-600', 'text-white', 'shadow-md');
+
+                // Initialize charts if data loaded
+                if(globalData.length > 0) {
+                    updateHeatmapChart(processHeatmap(globalData));
+                    calculateChurnRisk(globalData);
+                }
+            }
+        }
+
+        // --- AUTHENTICATION ---
+        function toggleAuthMode() {
+            document.getElementById('loginFormContainer').classList.toggle('hidden');
+            document.getElementById('registerFormContainer').classList.toggle('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        }
+        function handleRegister(e) {
+            e.preventDefault();
+            const u = document.getElementById('reg_username').value;
+            const p = document.getElementById('reg_password').value;
+            if(u && p) { localStorage.setItem('user_'+u, p); alert("Account Created!"); toggleAuthMode(); }
+        }
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const stored = localStorage.getItem('user_'+u);
+            if((u === 'admin' && p === 'spark') || (stored && stored === p)) {
+                document.getElementById('userDisplay').innerText = u;
+                showPage(2); initChartsWithMock();
+            } else { document.getElementById('loginError').classList.remove('hidden'); }
+        }
+        function logout() { location.reload(); }
+
+        // --- DATA PROCESSING ---
+        document.getElementById('rawInput').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = evt => {
+                globalData = csvToJson(evt.target.result);
+                processDashboardData(globalData);
+                populateDropdowns(globalData);
+                alert("Dataset Loaded! Dashboard updated.");
+            };
+            reader.readAsText(file);
+        });
+
+        function csvToJson(csv) {
+            const lines = csv.trim().split('\n');
+            const headers = lines[0].split(',').map(h=>h.trim());
+            return lines.slice(1).map(line => {
+                const d = line.split(',');
+                if(d.length < headers.length) return null;
+                let obj = {}; headers.forEach((h,i) => obj[h] = d[i]?.trim());
+                return obj;
+            }).filter(x=>x);
+        }
+
+        function populateDropdowns(data) {
+            const users = [...new Set(data.map(r => r.user_id))].sort();
+            const videos = [...new Set(data.map(r => r.video_id))].sort();
+
+            const uSel = document.getElementById('userSelect');
+            uSel.innerHTML = '<option value="">Select User ID</option>';
+            users.forEach(u => uSel.innerHTML += `<option value="${u}">${u}</option>`);
+
+            const hSel = document.getElementById('heatmapVideoSelect');
+            hSel.innerHTML = '<option value="all">All Videos</option>';
+            videos.forEach(v => hSel.innerHTML += `<option value="${v}">${v}</option>`);
+
+            const b1 = document.getElementById('battleVid1');
+            const b2 = document.getElementById('battleVid2');
+            b1.innerHTML = '<option value="">Select Video A</option>';
+            b2.innerHTML = '<option value="">Select Video B</option>';
+            videos.forEach(v => {
+                b1.innerHTML += `<option value="${v}">${v}</option>`;
+                b2.innerHTML += `<option value="${v}">${v}</option>`;
+            });
+        }
+
+        // --- CORE LOGIC ---
+        function processDashboardData(data) {
+            // 1. Segmentation
+            const userStats = {};
+            data.forEach(row => {
+                if(!userStats[row.user_id]) userStats[row.user_id] = { stops:0, stop_time:0, duration:0, seeks:0, events:0 };
+                userStats[row.user_id].events++;
+                if(row.event_type === 'STOP') {
+                    userStats[row.user_id].stops++;
+                    userStats[row.user_id].stop_time += parseFloat(row.timestamp_in_video);
+                    userStats[row.user_id].duration += parseFloat(row.video_duration_sec);
+                }
+                if(row.event_type === 'SEEK_FORWARD') userStats[row.user_id].seeks++;
+            });
+            globalUserStats = userStats;
+
+            const clusters = [];
+            Object.keys(userStats).forEach(uid => {
+                const s = userStats[uid];
+                const rate = s.stops > 0 ? (s.stop_time/s.duration) : 0;
+                if(s.seeks >= 2) clusters.push({user_type:"Serial Skipper"});
+                else if(rate > 0.8) clusters.push({user_type:"Binge Watcher"});
+                else clusters.push({user_type:"Casual Viewer"});
+            });
+            updateClusterChart(clusters);
+
+            // 2. Ad Spots
+            const uniqueVideos = [...new Set(data.map(r => r.video_id))];
+            const adSpots = uniqueVideos.map(vid => {
+                const vidLogs = data.filter(r=>r.video_id === vid);
+                const duration = Math.max(...vidLogs.map(r=>parseFloat(r.video_duration_sec)||0));
+                let bestTime=0, maxScore=-Infinity;
+                for(let t=30; t<duration-30; t+=30) {
+                    const active = vidLogs.filter(r=>r.event_type==='STOP' && parseFloat(r.timestamp_in_video)>=t).length;
+                    const skips = vidLogs.filter(r=>r.event_type==='SEEK_FORWARD' && parseFloat(r.timestamp_in_video)>=t && parseFloat(r.timestamp_in_video)<t+30).length;
+                    const score = active - (skips*2);
+                    if(score > maxScore) { maxScore=score; bestTime=t; }
+                }
+                const full = vidLogs.filter(r=>r.event_type==='STOP' && (parseFloat(r.timestamp_in_video)/parseFloat(r.video_duration_sec))>=0.9).length;
+                return { vid, time:bestTime, count:full };
+            });
+            updateAdTable(adSpots.slice(0,100));
+
+            // 3. Recommendations
+            const vidCounts = {};
+            data.forEach(r => vidCounts[r.video_id] = (vidCounts[r.video_id] || 0) + 1);
+            const sortedVids = Object.keys(vidCounts).sort((a,b) => vidCounts[b] - vidCounts[a]);
+            const userWatched = {};
+            data.forEach(r => { if(!userWatched[r.user_id]) userWatched[r.user_id]=new Set(); userWatched[r.user_id].add(r.video_id); });
+            const recs = Object.keys(userStats).slice(0,100).map(uid => {
+                let rec = sortedVids.find(v => !userWatched[uid]?.has(v)) || sortedVids[0];
+                return { userId:uid, recommended_vid_id:rec, confidence:(0.7+Math.random()*0.2).toFixed(2) };
+            });
+            updateRecTable(recs);
+        }
+
+        // --- CHURN RISK LOGIC ---
+        function calculateChurnRisk(data) {
+            const risks = [];
+            Object.keys(globalUserStats).forEach(uid => {
+                const s = globalUserStats[uid];
+                const completionRate = s.stops > 0 ? (s.stop_time / s.duration) : 0;
+                const skipRate = s.events > 0 ? (s.seeks / s.events) : 0;
+                const score = (completionRate * 0.7) - (skipRate * 0.3);
+                
+                let riskLevel = "Low";
+                let color = "text-green-400";
+                if(score < 0.2) { riskLevel = "Critical"; color = "text-red-500"; }
+                else if(score < 0.4) { riskLevel = "Moderate"; color = "text-yellow-400"; }
+
+                risks.push({ uid, riskLevel, color, score: score.toFixed(2) });
+            });
+            risks.sort((a,b) => a.score - b.score);
+            const tbody = document.getElementById('churnTableBody');
+            tbody.innerHTML = '';
+            risks.slice(0, 50).forEach(r => {
+                tbody.innerHTML += `<tr class="border-b border-gray-700 hover:bg-gray-700/50"><td class="px-4 py-2 font-mono text-xs text-blue-300">${r.uid}</td><td class="px-4 py-2 text-xs font-bold ${r.color}">${r.riskLevel}</td><td class="px-4 py-2 text-right text-xs text-gray-400">${r.score}</td></tr>`;
+            });
+        }
+
+        // --- VIDEO BATTLE LOGIC ---
+        let battleChart;
+        function updateBattleChart(vidA, vidB) {
+            const process = (vid) => {
+                const skips = {};
+                globalData.filter(r=>r.video_id===vid && r.event_type==='SEEK_FORWARD').forEach(r=>{
+                    const b = Math.floor(r.timestamp_in_video/30)*30;
+                    skips[b] = (skips[b]||0)+1;
+                });
+                const maxTime = Math.max(...Object.keys(skips).map(Number), 0) || 300;
+                const dataPoints = [];
+                for(let i=0; i<=maxTime; i+=30) dataPoints.push(skips[i] || 0);
+                return { data: dataPoints, labels: dataPoints.map((_,i)=>i*30+'s') };
+            };
+            const setA = process(vidA);
+            const setB = process(vidB);
+            const finalLabels = setA.labels.length > setB.labels.length ? setA.labels : setB.labels;
+
+            const ctx = document.getElementById('battleChart').getContext('2d');
+            if(battleChart) battleChart.destroy();
+            battleChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: finalLabels,
+                    datasets: [
+                        { label: vidA, data: setA.data, borderColor: '#ec4899', backgroundColor:'rgba(236, 72, 153, 0.1)', tension:0.4, fill:true },
+                        { label: vidB, data: setB.data, borderColor: '#3b82f6', backgroundColor:'rgba(59, 130, 246, 0.1)', tension:0.4, fill:true }
+                    ]
+                },
+                options: { responsive:true, maintainAspectRatio:false, scales:{ y:{grid:{color:'#374151'}}, x:{grid:{color:'#374151'}} } }
+            });
+        }
+        document.getElementById('battleVid1').addEventListener('change', checkBattle);
+        document.getElementById('battleVid2').addEventListener('change', checkBattle);
+        function checkBattle() {
+            const v1 = document.getElementById('battleVid1').value;
+            const v2 = document.getElementById('battleVid2').value;
+            if(v1 && v2) updateBattleChart(v1, v2);
+        }
+
+        // --- HEATMAP LOGIC ---
+        document.getElementById('heatmapVideoSelect').addEventListener('change', function() {
+            if(globalData.length === 0) return;
+            const selectedVid = this.value;
+            const filteredData = selectedVid === 'all' ? globalData : globalData.filter(r => r.video_id === selectedVid);
+            updateHeatmapChart(processHeatmap(filteredData));
+        });
+        function processHeatmap(data) {
+            const skips = {};
+            data.filter(r=>r.event_type==='SEEK_FORWARD').forEach(r=>{
+                const b = Math.floor(r.timestamp_in_video/30)*30;
+                skips[b] = (skips[b]||0)+1;
+            });
+            return Object.keys(skips).map(k=>({time_bucket:parseInt(k), num_skips:skips[k]}));
+        }
+
+        // --- USER INSPECTOR LOGIC ---
+        document.getElementById('userSelect').addEventListener('change', function() {
+            const uid = this.value; if(!uid) return; inspectUser(uid);
+        });
+        let userPrefChart;
+        function inspectUser(uid) {
+            document.getElementById('userSummary').classList.remove('hidden');
+            const s = globalUserStats[uid];
+            const badgeEl = document.getElementById('userBadge');
+            if(s.seeks >= 2) { badgeEl.innerText = "Serial Skipper"; badgeEl.className = "text-sm font-bold px-2 py-1 rounded bg-pink-600 text-white"; }
+            else if((s.stops > 0 ? s.stop_time/s.duration : 0) > 0.8) { badgeEl.innerText = "Binge Watcher"; badgeEl.className = "text-sm font-bold px-2 py-1 rounded bg-green-600 text-white"; }
+            else { badgeEl.innerText = "Casual Viewer"; badgeEl.className = "text-sm font-bold px-2 py-1 rounded bg-blue-500 text-white"; }
+            document.getElementById('userInteractions').innerText = globalData.filter(r => r.user_id === uid).length;
+
+            const userLogs = globalData.filter(r => r.user_id === uid);
+            const catStats = {}; let hasWatchTime = false;
+            userLogs.forEach(r => {
+                if (r.event_type === 'STOP') {
+                    const mins = parseFloat(r.timestamp_in_video) / 60;
+                    catStats[r.category] = (catStats[r.category] || 0) + mins;
+                    hasWatchTime = true;
+                }
+            });
+            if (!hasWatchTime) userLogs.forEach(r => catStats[r.category] = (catStats[r.category] || 0) + 1);
+            
+            const ctx = document.getElementById('userPrefChart').getContext('2d');
+            if(userPrefChart) userPrefChart.destroy();
+            userPrefChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: Object.keys(catStats), datasets: [{ label: hasWatchTime ? 'Watch Time (Mins)' : 'Events', data: Object.values(catStats).map(v=>v.toFixed(1)), backgroundColor: '#6366f1' }] },
+                options: { indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:'#374151'}}, y:{grid:{display:false}}} }
+            });
+
+            const tbody = document.getElementById('userActivityBody'); tbody.innerHTML = '';
+            const formatTime = (s) => `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+            userLogs.sort((a,b) => parseFloat(a.timestamp_in_video) - parseFloat(b.timestamp_in_video));
+            userLogs.forEach(r => {
+                let content = '';
+                const t = formatTime(r.timestamp_in_video);
+                if (r.event_type === 'SEEK_FORWARD') content = `<span class="text-red-400 font-bold">⏩ Skipped: ${t} → ${formatTime(r.seek_target_sec)}</span>`;
+                else if (r.event_type === 'PLAY') content = `<span class="text-green-400">▶ Started at ${t}</span>`;
+                else if (r.event_type === 'STOP') content = `<span class="text-gray-400">⏹ Stopped at ${t}</span>`;
+                else content = `<span class="text-yellow-500">Rewind</span>`;
+                
+                tbody.innerHTML += `<tr class="border-b border-gray-700"><td class="px-4 py-2 font-mono text-xs text-gray-300">${r.video_id}</td><td class="px-4 py-2 text-xs"><span class="bg-gray-700 px-2 py-1 rounded">${r.category}</span></td><td class="px-4 py-2 text-sm">${content}</td></tr>`;
+            });
+        }
+
+        // --- HELPERS ---
+        let clusterChart, heatLineChart;
+        function updateClusterChart(data) {
+            const counts = {}; data.forEach(d => counts[d.user_type] = (counts[d.user_type]||0)+1);
+            const ctx = document.getElementById('clusterChart').getContext('2d');
+            if(clusterChart) clusterChart.destroy();
+            clusterChart = new Chart(ctx, {
+                type: 'pie',
+                data: { labels: Object.keys(counts), datasets: [{ data: Object.values(counts), backgroundColor: ['#34D399', '#F472B6', '#60A5FA'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9CA3AF' } } } }
+            });
+        }
+        function updateHeatmapChart(data) {
+            data.sort((a,b) => a.time_bucket - b.time_bucket);
+            const ctx = document.getElementById('heatmapChart').getContext('2d');
+            if(heatLineChart) heatLineChart.destroy();
+            heatLineChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: data.map(d => d.time_bucket + "s"), datasets: [{ label: 'Skips', data: data.map(d => d.num_skips), borderColor: '#F87171', backgroundColor: 'rgba(248, 113, 113, 0.2)', fill: true, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: '#374151' } }, x: { grid: { color: '#374151' } } } }
+            });
+        }
+        function updateAdTable(data) {
+            const tbody = document.getElementById('adTableBody'); tbody.innerHTML = '';
+            data.forEach(row => { tbody.innerHTML += `<tr class="hover:bg-gray-700/50 transition"><td class="px-4 py-3 text-gray-200 font-mono">${row.vid}</td><td class="px-4 py-3 text-green-400 font-bold">${row.time}s</td><td class="px-4 py-3 text-blue-300 font-semibold">${row.count} users</td></tr>`; });
+        }
+        function updateRecTable(data) {
+            const tbody = document.getElementById('recTableBody'); tbody.innerHTML = '';
+            data.forEach(row => {
+                const p = Math.round(row.confidence * 100);
+                const c = p > 85 ? 'bg-green-500' : (p > 70 ? 'bg-blue-500' : 'bg-yellow-500');
+                tbody.innerHTML += `<tr><td class="px-4 py-3 font-mono text-blue-300">${row.userId}</td><td class="px-4 py-3 font-mono text-gray-200">${row.recommended_vid_id}</td><td class="px-4 py-3"><div class="flex items-center gap-3"><div class="w-full bg-gray-700 rounded-full h-2.5"><div class="${c} h-2.5 rounded-full" style="width: ${p}%"></div></div><span class="text-xs text-gray-400 w-8 text-right">${p}%</span></div></td></tr>`;
+            });
+        }
+        function initChartsWithMock() { updateClusterChart([{user_type: "Binge Watcher"}, {user_type: "Serial Skipper"}, {user_type: "Casual Viewer"}]); }
+    </script>
+</body>
+</html>sbt clean reload run
